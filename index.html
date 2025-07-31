@@ -366,6 +366,35 @@
             100% { opacity: 1; transform: scale(1); }
         }
 
+        .encrypted-text {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            word-break: break-all;
+            font-size: 12px;
+            margin: 10px 0;
+            border: 1px solid #333;
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1);
+        }
+
+        .success-notification {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -392,7 +421,7 @@
     <div id="systemActivity" class="system-activity"></div>
 
     <div class="system-header">
-        <div class="comment"># cofre_temporal.js - Sistema de Cápsula do Tempo</div>
+        <div class="comment"># cofre_temporal.py - Sistema de Cápsula do Tempo</div>
         <div class="code-line" style="animation-delay: 0.1s;">database = []</div>
         <div class="code-line" style="animation-delay: 0.2s;">active_timers = {}</div>
         <div class="code-line" style="animation-delay: 0.3s;">STORAGE_KEY = 'temporal_vault_db'</div>
@@ -411,7 +440,7 @@
         <p class="subtitle">Cápsula do Tempo Digital - Sistema de Mensagens Criptografadas</p>
 
         <div class="status-bar">
-            <div id="systemStatus">⚡ Sistema: <span style="color: #48bb78;">ATIVO</span> | Storage: <span style="color: #4299e1;">MemoryDB</span> | Cofres: <span id="msgCount">0</span> | Runtime: <span id="uptime">0s</span></div>
+            <div id="systemStatus">⚡ Sistema: <span style="color: #48bb78;">ATIVO</span> | Storage: <span style="color: #4299e1;">PersistentDB</span> | Cofres: <span id="msgCount">0</span> | Runtime: <span id="uptime">0s</span></div>
         </div>
 
         <div class="form-group">
@@ -432,11 +461,9 @@
                     <option value="10">10</option>
                     <option value="15">15</option>
                     <option value="30">30</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="5">5</option>
-                    <option value="10">10</option>
                     <option value="60">60</option>
+                    <option value="120">120</option>
+                    <option value="300">300</option>
                 </select>
                 <select id="timeUnit">
                     <option value="seconds">Segundos</option>
@@ -459,136 +486,134 @@
     </div>
 
     <script>
-        // Variáveis globais para estado em memória (funciona no GitHub Pages)
-        let database = [];
-        let activeTimers = new Map();
-        let systemUptime = 0;
-        let systemProcesses = [
-            'python checkTimers() -> validating locks',
-            'for timer in active_timers: validate()',
-            'if now > unlock_time: decrypt(message)',
-            'process_queue() -> checking database',
-            'try: process_queue() except Exception as e: pass',
-            'setInterval(lambda: monitor(), 1000)',
-            'database.append(new_capsule)',
-            'import base64, json, datetime',
-            'json.dumps(capsule_data)',
-            'unlocked = find_expired_capsules()'
-        ];
+        // Sistema de armazenamento robusto
+        class AdvancedStorage {
+            constructor() {
+                this.storageKey = 'temporal_vault_db_v2';
+                this.backupKey = 'temporal_vault_backup_v2';
+            }
 
-        // Inicialização do sistema
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDatabase();
-            startSystemDaemon();
-            startUptimeCounter();
-            startSystemActivity();
-            console.log("Sistema Cofre Temporal iniciado com sucesso!");
-        });
+            // Salvar dados
+            save(data) {
+                const serializedData = JSON.stringify(data);
+                let savedSuccessfully = false;
 
-        // Carrega dados do armazenamento local (com fallback)
-        function loadDatabase() {
-            try {
-                const stored = localStorage.getItem('temporal_vault_db');
-                if (stored) {
-                    database = JSON.parse(stored);
-                    updateMessagesList();
-                    updateCounter();
+                try {
+                    localStorage.setItem(this.storageKey, serializedData);
+                    localStorage.setItem(this.backupKey, serializedData);
+                    savedSuccessfully = true;
+                    console.log('Dados salvos no localStorage');
+                } catch (error) {
+                    console.warn('Erro ao salvar no localStorage:', error);
                 }
-            } catch (error) {
-                console.warn("Problema ao carregar dados locais, usando memória temporária");
-                database = [];
-            }
-        }
 
-        // Salva dados (com tratamento de erro)
-        function saveDatabase() {
-            try {
-                localStorage.setItem('temporal_vault_db', JSON.stringify(database));
-            } catch (error) {
-                console.warn("Não foi possível salvar no localStorage, dados mantidos em memória");
-            }
-        }
-
-        // Contador de uptime do sistema
-        function startUptimeCounter() {
-            setInterval(() => {
-                systemUptime++;
-                const hours = Math.floor(systemUptime / 3600);
-                const minutes = Math.floor((systemUptime % 3600) / 60);
-                const seconds = systemUptime % 60;
-                
-                let uptimeStr = '';
-                if (hours > 0) uptimeStr += `${hours}h `;
-                if (minutes > 0) uptimeStr += `${minutes}m `;
-                uptimeStr += `${seconds}s`;
-                
-                document.getElementById('uptime').textContent = uptimeStr;
-            }, 1000);
-        }
-
-        // Simulação de atividade do sistema
-        function startSystemActivity() {
-            setInterval(() => {
-                if (Math.random() < 0.15) {
-                    showSystemActivity();
+                try {
+                    sessionStorage.setItem(this.storageKey, serializedData);
+                    if (!savedSuccessfully) {
+                        console.log('Dados salvos no sessionStorage (temporário)');
+                    }
+                } catch (error) {
+                    console.warn('Erro ao salvar no sessionStorage:', error);
                 }
-            }, 4000);
-        }
 
-        function showSystemActivity() {
-            const activity = systemProcesses[Math.floor(Math.random() * systemProcesses.length)];
-            const activityDiv = document.getElementById('systemActivity');
-            activityDiv.textContent = activity;
-            activityDiv.classList.add('show');
-            
-            setTimeout(() => {
-                activityDiv.classList.remove('show');
-            }, 3000);
-        }
-
-        // Exibir terminal com feedback
-        function showTerminal(message, delay = 0) {
-            setTimeout(() => {
-                const terminal = document.getElementById('terminal');
-                terminal.style.display = 'block';
-                const pythonCommands = [
-                    'python app.py --production',
-                    'pip install cryptography',
-                    'for i in range(10): print(f"Processing {i}")',
-                    'if status == "ok": continue',
-                    'with open("capsule.dat", "w") as f: f.write(data)',
-                    'import threading; threading.Timer(delay, unlock).start()',
-                    'ps aux | grep python',
-                    'kill -9 $(pgrep python)'
-                ];
-                const randomCmd = pythonCommands[Math.floor(Math.random() * pythonCommands.length)];
-                terminal.innerHTML = `${message}<br><span style="color: #666; font-size: 11px;">${randomCmd}</span>`;
-                
-                setTimeout(() => {
-                    terminal.style.display = 'none';
-                }, 3500);
-            }, delay);
-        }
-
-        // Criar nova cápsula do tempo
-        function createTimeCapsule() {
-            const messageText = document.getElementById('messageText').value.trim();
-            const imageFile = document.getElementById('imageUpload').files[0];
-            const timeAmount = parseInt(document.getElementById('timeAmount').value);
-            const timeUnit = document.getElementById('timeUnit').value;
-
-            if (!messageText && !imageFile) {
-                showTerminal('ERROR: Dados insuficientes para criar cápsula');
-                alert('Adicione pelo menos uma mensagem ou imagem!');
-                return;
+                return savedSuccessfully;
             }
 
-            showTerminal('python encrypt.py --start', 0);
-            showTerminal('Calculando timestamp de desbloqueio...', 800);
-            showTerminal('Configurando timer automático...', 1600);
-            showTerminal('Cápsula criada com sucesso!', 2400);
+            // Carregar dados
+            load() {
+                let data = null;
 
-            const now = new Date();
-            let unlockTime = new Date(now);
-            
-            switch(timeUnit)
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    if (stored) {
+                        data = JSON.parse(stored);
+                        console.log('Dados carregados do localStorage');
+                    }
+                } catch (error) {
+                    console.warn('Erro ao carregar do localStorage:', error);
+                }
+
+                if (!data) {
+                    try {
+                        const backup = localStorage.getItem(this.backupKey);
+                        if (backup) {
+                            data = JSON.parse(backup);
+                            console.log('Dados carregados do backup');
+                        }
+                    } catch (error) {
+                        console.warn('Erro ao carregar backup:', error);
+                    }
+                }
+
+                if (!data) {
+                    try {
+                        const session = sessionStorage.getItem(this.storageKey);
+                        if (session) {
+                            data = JSON.parse(session);
+                            console.log('Dados carregados do sessionStorage');
+                        }
+                    } catch (error) {
+                        console.warn('Erro ao carregar do sessionStorage:', error);
+                    }
+                }
+
+                return data || [];
+            }
+        }
+
+        // Sistema principal
+        class TemporalVault {
+            constructor() {
+                this.storage = new AdvancedStorage();
+                this.database = [];
+                this.activeTimers = new Map();
+                this.startTime = Date.now();
+                this.init();
+            }
+
+            init() {
+                this.loadDatabase();
+                this.startSystemMonitoring();
+                this.updateDisplay();
+                this.initializeTimers();
+                this.showSystemActivity('Sistema inicializado');
+            }
+
+            // Carregar banco de dados
+            loadDatabase() {
+                try {
+                    this.database = this.storage.load();
+                    console.log(`Carregadas ${this.database.length} cápsulas`);
+                } catch (error) {
+                    console.error('Erro ao carregar database:', error);
+                    this.database = [];
+                }
+            }
+
+            // Salvar banco de dados
+            saveDatabase() {
+                try {
+                    this.storage.save(this.database);
+                    console.log('Database salvo com sucesso');
+                } catch (error) {
+                    console.error('Erro ao salvar database:', error);
+                }
+            }
+
+            // Criptografar dados (simulação)
+            encryptData(data) {
+                return btoa(JSON.stringify(data));
+            }
+
+            // Descriptografar dados
+            decryptData(encryptedData) {
+                try {
+                    return JSON.parse(atob(encryptedData));
+                } catch (error) {
+                    console.error('Erro ao descriptografar:', error);
+                    return null;
+                }
+            }
+
+            // Calcular tempo de desbloqueio
+            calculateUnlockTime(amount, unit)
