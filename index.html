@@ -352,6 +352,20 @@
             transform: translateX(-10px);
         }
 
+        .unlocked-content {
+            background: linear-gradient(135deg, #1c2e1c 0%, #2d5a2d 100%);
+            border: 2px solid #48bb78;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 15px;
+            animation: unlockReveal 1s ease-out;
+        }
+
+        @keyframes unlockReveal {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -379,24 +393,17 @@
 
     <div class="system-header">
         <div class="comment"># cofre_temporal.js - Sistema de Cápsula do Tempo</div>
-        <div class="code-line" style="animation-delay: 0.1s;">const crypto = require('crypto');</div>
-        <div class="code-line" style="animation-delay: 0.2s;">const fs = require('fs');</div>
-        <div class="code-line" style="animation-delay: 0.3s;">const express = require('express');</div>
+        <div class="code-line" style="animation-delay: 0.1s;">database = []</div>
+        <div class="code-line" style="animation-delay: 0.2s;">active_timers = {}</div>
+        <div class="code-line" style="animation-delay: 0.3s;">STORAGE_KEY = 'temporal_vault_db'</div>
         <div class="code-line" style="animation-delay: 0.4s;"></div>
-        <div class="code-line" style="animation-delay: 0.5s;">let database = [];</div>
-        <div class="code-line" style="animation-delay: 0.6s;">let activeTimers = new Map();</div>
+        <div class="code-line" style="animation-delay: 0.5s;">def encrypt_data(data):</div>
+        <div class="code-line" style="animation-delay: 0.6s;">&nbsp;&nbsp;return base64.encode(json.dumps(data))</div>
         <div class="code-line" style="animation-delay: 0.7s;"></div>
-        <div class="code-line" style="animation-delay: 0.8s;">function encryptData(data) {</div>
-        <div class="code-line" style="animation-delay: 0.9s;">&nbsp;&nbsp;return Buffer.from(data).toString('base64');</div>
-        <div class="code-line" style="animation-delay: 1.0s;">}</div>
-        <div class="code-line" style="animation-delay: 1.1s;"></div>
-        <div class="code-line" style="animation-delay: 1.2s;">function calculateUnlockTime(amount, unit) {</div>
-        <div class="code-line" style="animation-delay: 1.3s;">&nbsp;&nbsp;const now = new Date();</div>
-        <div class="code-line" style="animation-delay: 1.4s;">&nbsp;&nbsp;let multiplier = 1000;</div>
-        <div class="code-line" style="animation-delay: 1.5s;">&nbsp;&nbsp;if (unit === 'minutes') multiplier *= 60;</div>
-        <div class="code-line" style="animation-delay: 1.6s;">&nbsp;&nbsp;if (unit === 'hours') multiplier *= 3600;</div>
-        <div class="code-line" style="animation-delay: 1.7s;">&nbsp;&nbsp;return new Date(now.getTime() + amount * multiplier);</div>
-        <div class="code-line" style="animation-delay: 1.8s;">}</div>
+        <div class="code-line" style="animation-delay: 0.8s;">def calculate_unlock_time(amount, unit):</div>
+        <div class="code-line" style="animation-delay: 0.9s;">&nbsp;&nbsp;now = datetime.now()</div>
+        <div class="code-line" style="animation-delay: 1.0s;">&nbsp;&nbsp;multiplier = {'seconds': 1, 'minutes': 60}</div>
+        <div class="code-line" style="animation-delay: 1.1s;">&nbsp;&nbsp;return now + timedelta(seconds=amount * multiplier[unit])</div>
     </div>
 
     <div class="container">
@@ -404,7 +411,7 @@
         <p class="subtitle">Cápsula do Tempo Digital - Sistema de Mensagens Criptografadas</p>
 
         <div class="status-bar">
-            <div id="systemStatus">⚡ Sistema: <span style="color: #48bb78;">ATIVO</span> | Servidor: <span style="color: #4299e1;">Node.js</span> | Cofres: <span id="msgCount">0</span> | Runtime: <span id="uptime">0s</span></div>
+            <div id="systemStatus">⚡ Sistema: <span style="color: #48bb78;">ATIVO</span> | Storage: <span style="color: #4299e1;">MemoryDB</span> | Cofres: <span id="msgCount">0</span> | Runtime: <span id="uptime">0s</span></div>
         </div>
 
         <div class="form-group">
@@ -452,30 +459,57 @@
     </div>
 
     <script>
+        // Variáveis globais para estado em memória (funciona no GitHub Pages)
         let database = [];
+        let activeTimers = new Map();
         let systemUptime = 0;
         let systemProcesses = [
-            'checkTimers() -> checking locks',
-            'for (timer of activeTimers) validate()',
-            'if (now > unlockTime) decrypt(message)',
-            'server.listen(3000)',
-            'try { processQueue() } catch(e) {}',
-            'setInterval(() => monitor(), 1000)',
-            'database.length === 0',
-            'crypto.randomBytes(16)',
-            'fs.writeSync(logFile, data)',
-            'const unlocked = findExpired()'
+            'python checkTimers() -> validating locks',
+            'for timer in active_timers: validate()',
+            'if now > unlock_time: decrypt(message)',
+            'process_queue() -> checking database',
+            'try: process_queue() except Exception as e: pass',
+            'setInterval(lambda: monitor(), 1000)',
+            'database.append(new_capsule)',
+            'import base64, json, datetime',
+            'json.dumps(capsule_data)',
+            'unlocked = find_expired_capsules()'
         ];
 
-        const STORAGE_KEY = 'temporal_vault_db';
-
+        // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
             loadDatabase();
             startSystemDaemon();
             startUptimeCounter();
             startSystemActivity();
+            console.log("Sistema Cofre Temporal iniciado com sucesso!");
         });
 
+        // Carrega dados do armazenamento local (com fallback)
+        function loadDatabase() {
+            try {
+                const stored = localStorage.getItem('temporal_vault_db');
+                if (stored) {
+                    database = JSON.parse(stored);
+                    updateMessagesList();
+                    updateCounter();
+                }
+            } catch (error) {
+                console.warn("Problema ao carregar dados locais, usando memória temporária");
+                database = [];
+            }
+        }
+
+        // Salva dados (com tratamento de erro)
+        function saveDatabase() {
+            try {
+                localStorage.setItem('temporal_vault_db', JSON.stringify(database));
+            } catch (error) {
+                console.warn("Não foi possível salvar no localStorage, dados mantidos em memória");
+            }
+        }
+
+        // Contador de uptime do sistema
         function startUptimeCounter() {
             setInterval(() => {
                 systemUptime++;
@@ -492,9 +526,10 @@
             }, 1000);
         }
 
+        // Simulação de atividade do sistema
         function startSystemActivity() {
             setInterval(() => {
-                if (Math.random() < 0.12) {
+                if (Math.random() < 0.15) {
                     showSystemActivity();
                 }
             }, 4000);
@@ -511,21 +546,22 @@
             }, 3000);
         }
 
+        // Exibir terminal com feedback
         function showTerminal(message, delay = 0) {
             setTimeout(() => {
                 const terminal = document.getElementById('terminal');
                 terminal.style.display = 'block';
-                const commands = [
-                    'node app.js --production',
-                    'npm run encrypt --silent',
-                    'for i in {1..10}; do echo $i; done',
-                    'if [ "$status" = "ok" ]; then continue; fi',
-                    'while read line; do process $line; done',
-                    'tail -f /var/log/system.log',
-                    'ps aux | grep node',
-                    'kill -9 $(pidof defunct)'
+                const pythonCommands = [
+                    'python app.py --production',
+                    'pip install cryptography',
+                    'for i in range(10): print(f"Processing {i}")',
+                    'if status == "ok": continue',
+                    'with open("capsule.dat", "w") as f: f.write(data)',
+                    'import threading; threading.Timer(delay, unlock).start()',
+                    'ps aux | grep python',
+                    'kill -9 $(pgrep python)'
                 ];
-                const randomCmd = commands[Math.floor(Math.random() * commands.length)];
+                const randomCmd = pythonCommands[Math.floor(Math.random() * pythonCommands.length)];
                 terminal.innerHTML = `${message}<br><span style="color: #666; font-size: 11px;">${randomCmd}</span>`;
                 
                 setTimeout(() => {
@@ -534,6 +570,7 @@
             }, delay);
         }
 
+        // Criar nova cápsula do tempo
         function createTimeCapsule() {
             const messageText = document.getElementById('messageText').value.trim();
             const imageFile = document.getElementById('imageUpload').files[0];
@@ -546,43 +583,12 @@
                 return;
             }
 
-            showTerminal('Iniciando processo de criptografia...', 0);
+            showTerminal('python encrypt.py --start', 0);
             showTerminal('Calculando timestamp de desbloqueio...', 800);
             showTerminal('Configurando timer automático...', 1600);
+            showTerminal('Cápsula criada com sucesso!', 2400);
 
             const now = new Date();
             let unlockTime = new Date(now);
             
-            switch(timeUnit) {
-                case 'seconds':
-                    unlockTime.setSeconds(unlockTime.getSeconds() + timeAmount);
-                    break;
-                case 'minutes':
-                    unlockTime.setMinutes(unlockTime.getMinutes() + timeAmount);
-                    break;
-                case 'hours':
-                    unlockTime.setHours(unlockTime.getHours() + timeAmount);
-                    break;
-                case 'days':
-                    unlockTime.setDate(unlockTime.getDate() + timeAmount);
-                    break;
-            }
-
-            const message = {
-                id: Date.now(),
-                text: messageText,
-                image: null,
-                unlockTime: unlockTime.getTime(),
-                createdAt: now.getTime(),
-                status: 'locked'
-            };
-
-            if (imageFile) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    message.image = e.target.result;
-                    finalizeCapsule(message);
-                };
-                reader.readAsDataURL(imageFile);
-            } else {
-                finalizeCapsule(m
+            switch(timeUnit)
